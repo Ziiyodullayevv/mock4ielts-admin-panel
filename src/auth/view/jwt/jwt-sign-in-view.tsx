@@ -1,21 +1,18 @@
 'use client';
 
 import * as z from 'zod';
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useBoolean } from 'minimal-shared/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
-import Link from '@mui/material/Link';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
-import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-import { RouterLink } from 'src/routes/components';
 
 import { Iconify } from 'src/components/iconify';
 import { Form, Field, schemaUtils } from 'src/components/hook-form';
@@ -46,34 +43,23 @@ export function JwtSignInView() {
 
   const { checkUserSession } = useAuthContext();
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { mutateAsync, isPending, error } = useMutation({
+    mutationFn: signInWithPassword,
+  });
 
-  const defaultValues: SignInSchemaType = {
-    email: 'demo@minimals.cc',
-    password: '@2Minimal',
-  };
+  const errorMessage = error ? getErrorMessage(error) : null;
 
   const methods = useForm({
     resolver: zodResolver(SignInSchema),
-    defaultValues,
+    defaultValues: { email: '', password: '' },
   });
 
-  const {
-    handleSubmit,
-    formState: { isSubmitting },
-  } = methods;
+  const { handleSubmit } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
-    try {
-      await signInWithPassword({ email: data.email, password: data.password });
-      await checkUserSession?.();
-
-      router.refresh();
-    } catch (error) {
-      console.error(error);
-      const feedbackMessage = getErrorMessage(error);
-      setErrorMessage(feedbackMessage);
-    }
+    await mutateAsync({ email: data.email, password: data.password });
+    await checkUserSession?.();
+    router.refresh();
   });
 
   const renderForm = () => (
@@ -81,16 +67,6 @@ export function JwtSignInView() {
       <Field.Text name="email" label="Email address" slotProps={{ inputLabel: { shrink: true } }} />
 
       <Box sx={{ gap: 1.5, display: 'flex', flexDirection: 'column' }}>
-        <Link
-          component={RouterLink}
-          href="#"
-          variant="body2"
-          color="inherit"
-          sx={{ alignSelf: 'flex-end' }}
-        >
-          Forgot password?
-        </Link>
-
         <Field.Text
           name="password"
           label="Password"
@@ -119,7 +95,7 @@ export function JwtSignInView() {
         size="large"
         type="submit"
         variant="contained"
-        loading={isSubmitting}
+        loading={isPending}
         loadingIndicator="Sign in..."
       >
         Sign in
@@ -129,24 +105,7 @@ export function JwtSignInView() {
 
   return (
     <>
-      <FormHead
-        title="Sign in to your account"
-        description={
-          <>
-            {`Don’t have an account? `}
-            <Link component={RouterLink} href={paths.auth.jwt.signUp} variant="subtitle2">
-              Get started
-            </Link>
-          </>
-        }
-        sx={{ textAlign: { xs: 'center', md: 'left' } }}
-      />
-
-      <Alert severity="info" sx={{ mb: 3 }}>
-        Use <strong>{defaultValues.email}</strong>
-        {' with password '}
-        <strong>{defaultValues.password}</strong>
-      </Alert>
+      <FormHead title="Sign in to your account" />
 
       {!!errorMessage && (
         <Alert severity="error" sx={{ mb: 3 }}>

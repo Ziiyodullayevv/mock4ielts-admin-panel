@@ -1,13 +1,7 @@
-import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
-import { CONFIG } from 'src/global-config';
-
-import { JwtSignUpView } from 'src/auth/view/jwt';
-
-// ----------------------------------------------------------------------
-
-export const metadata: Metadata = { title: `Sign up | Jwt - ${CONFIG.appName}` };
+import { paths } from 'src/routes/paths';
 
 export default function Page() {
-  return <JwtSignUpView />;
+  redirect(paths.auth.jwt.signIn);
 }

@@ -14,6 +14,7 @@ import { detectSettings } from 'src/components/settings/server';
 import { SettingsDrawer, defaultSettings, SettingsProvider } from 'src/components/settings';
 
 import { AuthProvider } from 'src/auth/context/jwt';
+import { QueryProvider } from 'src/lib/query-provider';
 
 // ----------------------------------------------------------------------
 
@@ -66,6 +67,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
           defaultMode={themeConfig.defaultMode}
         />
 
+        <QueryProvider>
         <AuthProvider>
           <SettingsProvider
             cookieSettings={appConfig.cookieSettings}
@@ -85,6 +87,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
             </AppRouterCacheProvider>
           </SettingsProvider>
         </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );

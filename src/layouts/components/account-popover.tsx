@@ -16,9 +16,15 @@ import { RouterLink } from 'src/routes/components';
 import { Label } from 'src/components/label';
 import { CustomPopover } from 'src/components/custom-popover';
 
-import { useMockedUser } from 'src/auth/hooks';
+import { CONFIG } from 'src/global-config';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import { AccountButton } from './account-button';
+
+// ----------------------------------------------------------------------
+
+const DEFAULT_AVATAR = `${CONFIG.assetsDir}/assets/images/mock/avatar/avatar-25.webp`;
 import { SignOutButton } from './sign-out-button';
 
 // ----------------------------------------------------------------------
@@ -37,7 +43,10 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
 
   const { open, anchorEl, onClose, onOpen } = usePopover();
 
-  const { user } = useMockedUser();
+  const { user } = useAuthContext();
+
+  const displayName = user?.full_name || user?.displayName || user?.email || '';
+  const photoURL = user?.photoURL || DEFAULT_AVATAR;
 
   const renderMenuActions = () => (
     <CustomPopover
@@ -48,7 +57,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
     >
       <Box sx={{ p: 2, pb: 1.5 }}>
         <Typography variant="subtitle2" noWrap>
-          {user?.displayName}
+          {displayName}
         </Typography>
 
         <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
@@ -117,8 +126,8 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
     <>
       <AccountButton
         onClick={onOpen}
-        photoURL={user?.photoURL}
-        displayName={user?.displayName}
+        photoURL={photoURL}
+        displayName={displayName}
         sx={sx}
         {...other}
       />

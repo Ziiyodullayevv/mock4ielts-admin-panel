@@ -4,57 +4,56 @@ import { m } from 'framer-motion';
 import { varAlpha } from 'minimal-shared/utils';
 
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
+import ButtonBase from '@mui/material/ButtonBase';
 
 import { paths } from 'src/routes/paths';
+import { RouterLink } from 'src/routes/components';
 
 import { CONFIG } from 'src/global-config';
 
-import { Label } from 'src/components/label';
-
-import { useMockedUser } from 'src/auth/hooks';
+import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
+const DEFAULT_AVATAR = `${CONFIG.assetsDir}/assets/images/mock/avatar/avatar-25.webp`;
+
 export function NavUpgrade({ sx, ...other }: BoxProps) {
-  const { user } = useMockedUser();
+  const { user } = useAuthContext();
+
+  const displayName = user?.full_name || user?.displayName || user?.email || '';
+  const photoURL = user?.photoURL || DEFAULT_AVATAR;
 
   return (
     <Box
       sx={[{ px: 2, py: 5, textAlign: 'center' }, ...(Array.isArray(sx) ? sx : [sx])]}
       {...other}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
-        <Box sx={{ position: 'relative' }}>
-          <Avatar src={user?.photoURL} alt={user?.displayName} sx={{ width: 48, height: 48 }}>
-            {user?.displayName?.charAt(0).toUpperCase()}
-          </Avatar>
+      <ButtonBase
+        component={RouterLink}
+        href={paths.dashboard.profile}
+        sx={{
+          width: 1,
+          display: 'flex',
+          alignItems: 'center',
+          flexDirection: 'column',
+          borderRadius: 2,
+          p: 2,
+          '&:hover': { bgcolor: 'action.hover' },
+        }}
+      >
+        <Avatar src={photoURL} alt={displayName} sx={{ width: 48, height: 48 }}>
+          {displayName.charAt(0).toUpperCase() || 'U'}
+        </Avatar>
 
-          <Label
-            color="success"
-            variant="filled"
-            sx={{
-              top: -6,
-              px: 0.5,
-              left: 40,
-              height: 20,
-              position: 'absolute',
-              borderBottomLeftRadius: 2,
-            }}
-          >
-            Free
-          </Label>
-        </Box>
-
-        <Box sx={{ mb: 2, mt: 1.5, width: 1 }}>
+        <Box sx={{ mt: 1.5, width: 1 }}>
           <Typography
             variant="subtitle2"
             noWrap
-            sx={{ mb: 1, color: 'var(--layout-nav-text-primary-color)' }}
+            sx={{ mb: 0.5, color: 'var(--layout-nav-text-primary-color)' }}
           >
-            {user?.displayName}
+            {displayName}
           </Typography>
 
           <Typography
@@ -65,16 +64,7 @@ export function NavUpgrade({ sx, ...other }: BoxProps) {
             {user?.email}
           </Typography>
         </Box>
-
-        <Button
-          variant="contained"
-          href={paths.minimalStore}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Upgrade to Pro
-        </Button>
-      </Box>
+      </ButtonBase>
     </Box>
   );
 }

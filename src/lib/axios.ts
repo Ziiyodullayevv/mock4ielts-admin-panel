@@ -6,6 +6,9 @@ import { CONFIG } from 'src/global-config';
 
 // ----------------------------------------------------------------------
 
+const JWT_STORAGE_KEY = 'jwt_access_token';
+const JWT_REFRESH_KEY = 'jwt_refresh_token';
+
 const axiosInstance = axios.create({
   baseURL: CONFIG.serverUrl,
   headers: {
@@ -13,24 +16,83 @@ const axiosInstance = axios.create({
   },
 });
 
-/**
- * Optional: Add token (if using auth)
- *
- axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
-  if (token) {
+// Attach token to every request
+axiosInstance.interceptors.request.use((config) => {
+  const token = sessionStorage.getItem(JWT_STORAGE_KEY);
+  if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
-*
-*/
+
+// Queue for concurrent requests during token refresh
+let isRefreshing = false;
+let failedQueue: { resolve: (token: string) => void; reject: (err: unknown) => void }[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error);
+    else resolve(token!);
+  });
+  failedQueue = [];
+};
 
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error?.response?.status === 401 && !originalRequest?._retry) {
+      if (isRefreshing) {
+        return new Promise<string>((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return axiosInstance(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = sessionStorage.getItem(JWT_REFRESH_KEY);
+
+      if (!refreshToken) {
+        isRefreshing = false;
+        sessionStorage.removeItem(JWT_STORAGE_KEY);
+        window.location.href = '/auth/jwt/sign-in';
+        return Promise.reject(error);
+      }
+
+      try {
+        const res = await axios.post(`${CONFIG.serverUrl}/admin/auth/refresh`, {
+          refresh_token: refreshToken,
+        });
+
+        const accessToken: string = res.data?.data?.access_token;
+        const newRefreshToken: string = res.data?.data?.refresh_token;
+
+        sessionStorage.setItem(JWT_STORAGE_KEY, accessToken);
+        if (newRefreshToken) sessionStorage.setItem(JWT_REFRESH_KEY, newRefreshToken);
+
+        axiosInstance.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+
+        processQueue(null, accessToken);
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return axiosInstance(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        sessionStorage.removeItem(JWT_STORAGE_KEY);
+        sessionStorage.removeItem(JWT_REFRESH_KEY);
+        delete axiosInstance.defaults.headers.common.Authorization;
+        window.location.href = '/auth/jwt/sign-in';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
     const message = error?.response?.data?.message || error?.message || 'Something went wrong!';
-    console.error('Axios error:', message);
     return Promise.reject(new Error(message));
   }
 );
@@ -57,28 +119,19 @@ export const fetcher = async <T = unknown>(
 // ----------------------------------------------------------------------
 
 export const endpoints = {
-  chat: '/api/chat',
-  kanban: '/api/kanban',
-  calendar: '/api/calendar',
   auth: {
-    me: '/api/auth/me',
-    signIn: '/api/auth/sign-in',
-    signUp: '/api/auth/sign-up',
+    signIn: '/admin/auth/login',
+    refresh: '/admin/auth/refresh',
   },
-  mail: {
-    list: '/api/mail/list',
-    details: '/api/mail/details',
-    labels: '/api/mail/labels',
+  users: {
+    list: '/admin/users',
+    details: (id: string) => `/admin/users/${id}`,
   },
-  post: {
-    list: '/api/post/list',
-    details: '/api/post/details',
-    latest: '/api/post/latest',
-    search: '/api/post/search',
+  questions: {
+    list: '/admin/questions',
+    details: (id: string) => `/admin/questions/${id}`,
   },
-  product: {
-    list: '/api/product/list',
-    details: '/api/product/details',
-    search: '/api/product/search',
+  profile: {
+    me: '/users/me',
   },
-} as const;
+};

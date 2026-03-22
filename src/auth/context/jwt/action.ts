@@ -2,21 +2,14 @@
 
 import axios, { endpoints } from 'src/lib/axios';
 
+import { JWT_REFRESH_KEY } from './constant';
 import { setSession } from './utils';
-import { JWT_STORAGE_KEY } from './constant';
 
 // ----------------------------------------------------------------------
 
 export type SignInParams = {
   email: string;
   password: string;
-};
-
-export type SignUpParams = {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
 };
 
 /** **************************************
@@ -28,47 +21,20 @@ export const signInWithPassword = async ({ email, password }: SignInParams): Pro
 
     const res = await axios.post(endpoints.auth.signIn, params);
 
-    const { accessToken } = res.data;
+    const accessToken = res.data?.data?.access_token;
+    const refreshToken = res.data?.data?.refresh_token;
 
     if (!accessToken) {
       throw new Error('Access token not found in response');
+    }
+
+    if (refreshToken) {
+      sessionStorage.setItem(JWT_REFRESH_KEY, refreshToken);
     }
 
     setSession(accessToken);
   } catch (error) {
     console.error('Error during sign in:', error);
-    throw error;
-  }
-};
-
-/** **************************************
- * Sign up
- *************************************** */
-export const signUp = async ({
-  email,
-  password,
-  firstName,
-  lastName,
-}: SignUpParams): Promise<void> => {
-  const params = {
-    email,
-    password,
-    firstName,
-    lastName,
-  };
-
-  try {
-    const res = await axios.post(endpoints.auth.signUp, params);
-
-    const { accessToken } = res.data;
-
-    if (!accessToken) {
-      throw new Error('Access token not found in response');
-    }
-
-    sessionStorage.setItem(JWT_STORAGE_KEY, accessToken);
-  } catch (error) {
-    console.error('Error during sign up:', error);
     throw error;
   }
 };

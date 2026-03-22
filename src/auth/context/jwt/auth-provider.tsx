@@ -9,15 +9,9 @@ import axios, { endpoints } from 'src/lib/axios';
 
 import { JWT_STORAGE_KEY } from './constant';
 import { AuthContext } from '../auth-context';
-import { setSession, isValidToken } from './utils';
+import { jwtDecode, setSession, isValidToken } from './utils';
 
 // ----------------------------------------------------------------------
-
-/**
- * NOTE:
- * We only build demo at basic level.
- * Customer will need to do some extra handling yourself if you want to extend the logic and other features...
- */
 
 type Props = {
   children: React.ReactNode;
@@ -31,11 +25,17 @@ export function AuthProvider({ children }: Props) {
       const accessToken = sessionStorage.getItem(JWT_STORAGE_KEY);
 
       if (accessToken && isValidToken(accessToken)) {
-        setSession(accessToken);
+        await setSession(accessToken);
 
-        const res = await axios.get(endpoints.auth.me);
+        const decoded = jwtDecode(accessToken);
 
-        const { user } = res.data;
+        if (!decoded?.sub) {
+          setState({ user: null, loading: false });
+          return;
+        }
+
+        const res = await axios.get(endpoints.users.details(decoded.sub));
+        const user = res.data?.data;
 
         setState({ user: { ...user, accessToken }, loading: false });
       } else {
