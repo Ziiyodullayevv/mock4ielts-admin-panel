@@ -19,13 +19,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
 
-import { Label } from 'src/components/label';
-
 import { CONFIG } from 'src/global-config';
-
 import axiosInstance, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
+import { Label } from 'src/components/label';
 import { Form, Field, schemaUtils } from 'src/components/hook-form';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
@@ -37,12 +35,9 @@ const BAND_SCORES = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 
 
 const ProfileSchema = z.object({
   full_name: z.string().max(100, 'Max 100 characters').optional(),
-  phone: schemaUtils
-    .phoneNumber({ isValid: isValidPhoneNumber })
-    .or(z.literal(''))
-    .optional(),
+  phone: schemaUtils.phoneNumber({ isValid: isValidPhoneNumber }).or(z.literal('')).optional(),
   country: z.string().optional(),
-  target_band: z.union([z.coerce.number().min(0).max(9), z.literal('')]).optional(),
+  target_band: z.union([z.number().min(0).max(9), z.literal('')]).optional(),
 });
 
 type ProfileSchemaType = z.infer<typeof ProfileSchema>;
@@ -62,10 +57,7 @@ export function ProfileView() {
     <DashboardContent>
       <CustomBreadcrumbs
         heading="Profile"
-        links={[
-          { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Profile' },
-        ]}
+        links={[{ name: 'Dashboard', href: paths.dashboard.root }, { name: 'Profile' }]}
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
@@ -119,7 +111,7 @@ function ProfileForm({ profile }: ProfileFormProps) {
         full_name: data.full_name || null,
         phone: data.phone || null,
         country: data.country || null,
-        target_band: data.target_band === '' ? null : data.target_band ?? null,
+        target_band: data.target_band === '' ? null : (data.target_band ?? null),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
@@ -150,11 +142,7 @@ function ProfileForm({ profile }: ProfileFormProps) {
                   border: (theme) => `dashed 1px ${theme.vars.palette.divider}`,
                 }}
               >
-                <Avatar
-                  src={DEFAULT_AVATAR}
-                  alt={displayName}
-                  sx={{ width: 120, height: 120 }}
-                >
+                <Avatar src={DEFAULT_AVATAR} alt={displayName} sx={{ width: 120, height: 120 }}>
                   {avatarLetter}
                 </Avatar>
               </Box>
@@ -197,18 +185,12 @@ function ProfileForm({ profile }: ProfileFormProps) {
                   Joined
                 </Typography>
                 <Typography variant="body2">
-                  {profile?.created_at
-                    ? new Date(profile.created_at).toLocaleDateString()
-                    : '—'}
+                  {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '—'}
                 </Typography>
               </Box>
             </Stack>
 
-            <Button
-              variant="soft"
-              color="error"
-              sx={{ mt: 3, width: 1 }}
-            >
+            <Button variant="soft" color="error" sx={{ mt: 3, width: 1 }}>
               Delete account
             </Button>
           </Card>

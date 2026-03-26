@@ -2,6 +2,7 @@
 
 import type { ISection } from 'src/types/section';
 
+import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -19,11 +20,11 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { useRouter } from 'next/navigation';
-
 import { paths } from 'src/routes/paths';
+
 import axiosInstance, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
+
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
@@ -104,13 +105,10 @@ export function SectionListView() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sections'] }),
   });
 
-  const handleTabChange = useCallback(
-    (_: React.SyntheticEvent, newValue: string) => {
-      setSectionType(newValue);
-      setPage(0);
-    },
-    []
-  );
+  const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: string) => {
+    setSectionType(newValue);
+    setPage(0);
+  }, []);
 
   const handleSearch = useCallback((value: string) => {
     setSearch(value);

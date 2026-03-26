@@ -1,7 +1,6 @@
 'use client';
 
 import type { ISection } from 'src/types/section';
-import { SECTION_COLORS, SECTION_TYPES } from 'src/types/section';
 
 import { useRouter } from 'next/navigation';
 import { usePopover, useBoolean } from 'minimal-shared/hooks';
@@ -20,9 +19,12 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 
 import { paths } from 'src/routes/paths';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { CustomPopover } from 'src/components/custom-popover';
+
+import { SECTION_TYPES, SECTION_COLORS } from 'src/types/section';
 
 // ----------------------------------------------------------------------
 
@@ -70,10 +72,7 @@ export function SectionTableRow({ row, onDeleteRow }: Props) {
         <TableCell>{new Date(row.created_at).toLocaleDateString()}</TableCell>
 
         <TableCell align="right" sx={{ px: 1 }}>
-          <IconButton
-            color={popover.open ? 'inherit' : 'default'}
-            onClick={popover.onOpen}
-          >
+          <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
           </IconButton>
         </TableCell>
@@ -115,9 +114,7 @@ export function SectionTableRow({ row, onDeleteRow }: Props) {
       <Dialog open={confirm.value} onClose={confirm.onFalse}>
         <DialogTitle>Delete</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this section?
-          </DialogContentText>
+          <DialogContentText>Are you sure you want to delete this section?</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={confirm.onFalse} color="inherit">

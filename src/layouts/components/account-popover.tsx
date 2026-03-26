@@ -13,10 +13,10 @@ import { paths } from 'src/routes/paths';
 import { usePathname } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
+import { CONFIG } from 'src/global-config';
+
 import { Label } from 'src/components/label';
 import { CustomPopover } from 'src/components/custom-popover';
-
-import { CONFIG } from 'src/global-config';
 
 import { useAuthContext } from 'src/auth/hooks';
 

@@ -52,6 +52,7 @@
     "@tiptap/extensions": "^3.20.4",
     "@tiptap/react": "^3.20.4",
     "@tiptap/starter-kit": "^3.20.4",
+    "accept-language": "^3.0.20",
     "autosuggest-highlight": "^3.3.4",
     "axios": "^1.13.2",
     "dayjs": "^1.11.19",

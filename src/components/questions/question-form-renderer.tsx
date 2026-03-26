@@ -21,6 +21,7 @@ type Props = {
   prefix: string;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SELECTION_TYPES: QuestionType[] = [
   'single_choice',
   'multiple_choice',

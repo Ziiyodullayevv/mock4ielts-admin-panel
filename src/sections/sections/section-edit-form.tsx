@@ -1,15 +1,10 @@
 'use client';
 
 import type { ISection, SectionType, QuestionType } from 'src/types/section';
-import {
-  SECTION_TYPES,
-  QUESTION_TYPES,
-  SECTION_ALLOWED_TYPES,
-} from 'src/types/section';
 
-import { useForm, useFieldArray, useFormContext } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm, useFieldArray, useFormContext } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -18,17 +13,21 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import LoadingButton from '@mui/lab/LoadingButton';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
 
 import { paths } from 'src/routes/paths';
+
 import axiosInstance, { endpoints } from 'src/lib/axios';
-import { Form, Field } from 'src/components/hook-form';
+
 import { Iconify } from 'src/components/iconify';
+import { Form, Field } from 'src/components/hook-form';
 import { QuestionFormRenderer } from 'src/components/questions';
+
+import { SECTION_TYPES, QUESTION_TYPES, SECTION_ALLOWED_TYPES } from 'src/types/section';
 
 // ----------------------------------------------------------------------
 
@@ -145,9 +144,7 @@ export function SectionEditForm({ currentSection }: Props) {
 
             // Auto-derive metadata.blanks for diagram_completion
             if (q.question_type === 'diagram_completion' && q.correct_answer && meta) {
-              meta.blanks = Object.keys(q.correct_answer).sort(
-                (a, b) => Number(a) - Number(b)
-              );
+              meta.blanks = Object.keys(q.correct_answer).sort((a, b) => Number(a) - Number(b));
             }
 
             // Ensure word_limit is a number

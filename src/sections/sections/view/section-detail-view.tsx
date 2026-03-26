@@ -1,10 +1,9 @@
 'use client';
 
 import type { ISection } from 'src/types/section';
-import { SECTION_COLORS, SECTION_TYPES, QUESTION_TYPES } from 'src/types/section';
 
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -13,18 +12,22 @@ import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import Accordion from '@mui/material/Accordion';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 
 import { paths } from 'src/routes/paths';
+
 import axiosInstance, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+
+import { SECTION_TYPES, SECTION_COLORS, QUESTION_TYPES } from 'src/types/section';
 
 // ----------------------------------------------------------------------
 
@@ -106,13 +109,9 @@ export function SectionDetailView({ id }: Props) {
             <Stack spacing={2}>
               {data.parts?.map((part, pi) => (
                 <Accordion key={part.id || pi} defaultExpanded={pi === 0}>
-                  <AccordionSummary
-                    expandIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}
-                  >
+                  <AccordionSummary expandIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}>
                     <Stack direction="row" spacing={1.5} alignItems="center" sx={{ width: 1 }}>
-                      <Typography variant="subtitle1">
-                        {part.title || `Part ${pi + 1}`}
-                      </Typography>
+                      <Typography variant="subtitle1">{part.title || `Part ${pi + 1}`}</Typography>
                       <Chip
                         label={`${part.questions?.length ?? 0} questions`}
                         size="small"

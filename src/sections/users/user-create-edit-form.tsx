@@ -21,12 +21,10 @@ import LoadingButton from '@mui/lab/LoadingButton';
 
 import { paths } from 'src/routes/paths';
 
-import { Label } from 'src/components/label';
-
 import { CONFIG } from 'src/global-config';
-
 import axiosInstance, { endpoints } from 'src/lib/axios';
 
+import { Label } from 'src/components/label';
 import { Form, Field, schemaUtils } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
@@ -84,7 +82,7 @@ export function UserCreateEditForm({ currentUser }: Props) {
         full_name: data.full_name,
         phone: data.phone || null,
         country: data.country || null,
-        target_band: data.target_band === '' ? null : data.target_band ?? null,
+        target_band: data.target_band === '' ? null : (data.target_band ?? null),
         token_balance: data.token_balance,
         is_admin: data.is_admin,
       }),
@@ -119,11 +117,7 @@ export function UserCreateEditForm({ currentUser }: Props) {
                   border: (theme) => `dashed 1px ${theme.vars.palette.divider}`,
                 }}
               >
-                <Avatar
-                  src={DEFAULT_AVATAR}
-                  alt={displayName}
-                  sx={{ width: 120, height: 120 }}
-                >
+                <Avatar src={DEFAULT_AVATAR} alt={displayName} sx={{ width: 120, height: 120 }}>
                   {avatarLetter}
                 </Avatar>
               </Box>
