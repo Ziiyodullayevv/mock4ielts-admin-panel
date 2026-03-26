@@ -6,6 +6,7 @@ import * as z from 'zod';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { isValidPhoneNumber } from 'react-phone-number-input/input';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
@@ -14,49 +15,59 @@ import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
+import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 
 import { paths } from 'src/routes/paths';
 
+import { Label } from 'src/components/label';
+
+import { CONFIG } from 'src/global-config';
+
 import axiosInstance, { endpoints } from 'src/lib/axios';
 
-import { Form, RHFSwitch, RHFTextField } from 'src/components/hook-form';
+import { Form, Field, schemaUtils } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
+const DEFAULT_AVATAR = `${CONFIG.assetsDir}/assets/images/mock/avatar/avatar-25.webp`;
+
+const BAND_SCORES = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9];
+
 const UserSchema = z.object({
-  full_name: z.string().min(1, 'Full name is required'),
-  phone: z.string(),
-  country: z.string(),
-  target_band: z.number().min(0).max(9).optional(),
-  token_balance: z.number().min(0),
+  full_name: z.string().min(1, { error: 'Full name is required!' }),
+  email: z.string(),
+  phone: schemaUtils.phoneNumber({ isValid: isValidPhoneNumber }),
+  country: schemaUtils.nullableInput(z.string().min(1, { error: 'Country is required!' }), {
+    error: 'Country is required!',
+  }),
+  target_band: z.union([z.coerce.number().min(0).max(9), z.literal('')]).optional(),
+  token_balance: z.coerce.number().min(0),
   is_admin: z.boolean(),
 });
-
-type UserSchemaType = z.infer<typeof UserSchema>;
 
 type Props = {
   currentUser?: IUser;
 };
 
+// ----------------------------------------------------------------------
+
 export function UserCreateEditForm({ currentUser }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const avatarLetter =
-    currentUser?.full_name?.charAt(0).toUpperCase() ||
-    currentUser?.email?.charAt(0).toUpperCase() ||
-    'U';
+  const displayName = currentUser?.full_name || currentUser?.email || '';
+  const avatarLetter = displayName.charAt(0).toUpperCase() || 'U';
 
-  const methods = useForm<UserSchemaType>({
+  const methods = useForm({
     resolver: zodResolver(UserSchema),
     defaultValues: {
       full_name: currentUser?.full_name ?? '',
+      email: currentUser?.email ?? '',
       phone: currentUser?.phone ?? '',
-      country: currentUser?.country ?? '',
-      target_band: currentUser?.target_band ?? undefined,
+      country: currentUser?.country ?? 'Uzbekistan',
+      target_band: currentUser?.target_band ?? 0,
       token_balance: currentUser?.token_balance ?? 0,
       is_admin: currentUser?.is_admin ?? false,
     },
@@ -68,12 +79,14 @@ export function UserCreateEditForm({ currentUser }: Props) {
   } = methods;
 
   const { mutate, isPending } = useMutation({
-    mutationFn: (data: UserSchemaType) =>
+    mutationFn: (data: any) =>
       axiosInstance.patch(endpoints.users.details(currentUser!.id), {
-        ...data,
+        full_name: data.full_name,
         phone: data.phone || null,
         country: data.country || null,
-        target_band: data.target_band ?? null,
+        target_band: data.target_band === '' ? null : data.target_band ?? null,
+        token_balance: data.token_balance,
+        is_admin: data.is_admin,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -87,78 +100,96 @@ export function UserCreateEditForm({ currentUser }: Props) {
   return (
     <Form methods={methods} onSubmit={onSubmit}>
       <Grid container spacing={3}>
-        {/* Avatar card */}
+        {/* Left card — Avatar & switches */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <Card
-            sx={{
-              pt: 10,
-              pb: 5,
-              px: 3,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
-          >
-            <Avatar sx={{ width: 100, height: 100, fontSize: 40, mb: 3 }}>{avatarLetter}</Avatar>
+          <Card sx={{ pt: 10, pb: 5, px: 3, position: 'relative' }}>
+            <Label
+              color={currentUser?.is_admin ? 'primary' : 'warning'}
+              sx={{ position: 'absolute', top: 24, right: 24 }}
+            >
+              {currentUser?.is_admin ? 'Admin' : 'User'}
+            </Label>
 
-            <Typography variant="subtitle1" sx={{ mb: 0.5 }}>
-              {currentUser?.full_name || '—'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {currentUser?.email}
-            </Typography>
-
-            <Divider sx={{ width: 1, mb: 3 }} />
-
-            <Stack spacing={1} sx={{ width: 1, typography: 'body2' }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Box component="span" color="text.secondary">
-                  Provider
-                </Box>
-                <Box component="span">{currentUser?.auth_provider}</Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 5 }}>
+              <Box
+                sx={{
+                  p: '8px',
+                  mb: 2,
+                  borderRadius: '50%',
+                  border: (theme) => `dashed 1px ${theme.vars.palette.divider}`,
+                }}
+              >
+                <Avatar
+                  src={DEFAULT_AVATAR}
+                  alt={displayName}
+                  sx={{ width: 120, height: 120 }}
+                >
+                  {avatarLetter}
+                </Avatar>
               </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Box component="span" color="text.secondary">
-                  Joined
-                </Box>
-                <Box component="span">
-                  {currentUser?.created_at
-                    ? new Date(currentUser.created_at).toLocaleDateString()
-                    : '—'}
-                </Box>
-              </Box>
-            </Stack>
+
+              <Typography variant="subtitle1" noWrap sx={{ mt: 1 }}>
+                {currentUser?.full_name || '—'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" noWrap>
+                {currentUser?.email}
+              </Typography>
+            </Box>
+
+            <Field.Switch
+              name="is_admin"
+              label="Admin"
+              labelPlacement="start"
+              sx={{ justifyContent: 'space-between', width: 1 }}
+            />
+
+            <Typography variant="caption" color="text.secondary" sx={{ ml: 0 }}>
+              Apply admin role
+            </Typography>
+
+            <Button
+              variant="soft"
+              color="error"
+              sx={{ mt: 3, width: 1 }}
+              onClick={() => router.push(paths.dashboard.users.root)}
+            >
+              Delete user
+            </Button>
           </Card>
         </Grid>
 
-        {/* Form card */}
+        {/* Right card — Form fields */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Card sx={{ p: 3 }}>
-            <Grid container spacing={2.5}>
-              <Grid size={{ xs: 12 }}>
-                <RHFTextField name="full_name" label="Full name" />
-              </Grid>
+            <Box
+              sx={{
+                rowGap: 3,
+                columnGap: 2,
+                display: 'grid',
+                gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+              }}
+            >
+              <Field.Text name="full_name" label="Full name" />
+              <Field.Text name="email" label="Email address" disabled />
+              <Field.Phone name="phone" label="Phone number" defaultCountry="UZ" />
 
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <RHFTextField name="phone" label="Phone" />
-              </Grid>
+              <Field.CountrySelect
+                fullWidth
+                name="country"
+                label="Country"
+                placeholder="Choose a country"
+              />
 
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <RHFTextField name="country" label="Country" />
-              </Grid>
+              <Field.Select name="target_band" label="Target band">
+                {BAND_SCORES.map((score) => (
+                  <MenuItem key={score} value={score}>
+                    {score.toFixed(1)}
+                  </MenuItem>
+                ))}
+              </Field.Select>
 
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <RHFTextField name="target_band" label="Target band (0–9)" type="number" />
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <RHFTextField name="token_balance" label="Token balance" type="number" />
-              </Grid>
-
-              <Grid size={{ xs: 12 }}>
-                <RHFSwitch name="is_admin" label="Admin role" />
-              </Grid>
-            </Grid>
+              <Field.Text name="token_balance" label="Token balance" type="number" />
+            </Box>
 
             <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
               <Button

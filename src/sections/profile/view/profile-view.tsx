@@ -3,6 +3,7 @@
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { isValidPhoneNumber } from 'react-phone-number-input/input';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
@@ -10,7 +11,7 @@ import Card from '@mui/material/Card';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
-import Divider from '@mui/material/Divider';
+import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
@@ -18,20 +19,29 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
 
+import { Label } from 'src/components/label';
+
+import { CONFIG } from 'src/global-config';
+
 import axiosInstance, { endpoints } from 'src/lib/axios';
 import { DashboardContent } from 'src/layouts/dashboard';
 
-import { Form, RHFSelect, RHFTextField } from 'src/components/hook-form';
+import { Form, Field, schemaUtils } from 'src/components/hook-form';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 // ----------------------------------------------------------------------
+
+const DEFAULT_AVATAR = `${CONFIG.assetsDir}/assets/images/mock/avatar/avatar-25.webp`;
 
 const BAND_SCORES = [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9];
 
 const ProfileSchema = z.object({
   full_name: z.string().max(100, 'Max 100 characters').optional(),
-  phone: z.string().max(20, 'Max 20 characters').optional(),
-  country: z.string().max(100, 'Max 100 characters').optional(),
+  phone: schemaUtils
+    .phoneNumber({ isValid: isValidPhoneNumber })
+    .or(z.literal(''))
+    .optional(),
+  country: z.string().optional(),
   target_band: z.union([z.coerce.number().min(0).max(9), z.literal('')]).optional(),
 });
 
@@ -85,18 +95,16 @@ type ProfileFormProps = {
 function ProfileForm({ profile }: ProfileFormProps) {
   const queryClient = useQueryClient();
 
-  const avatarLetter =
-    profile?.full_name?.charAt(0).toUpperCase() ||
-    profile?.email?.charAt(0).toUpperCase() ||
-    'U';
+  const displayName = profile?.full_name || profile?.email || '';
+  const avatarLetter = displayName.charAt(0).toUpperCase() || 'U';
 
   const methods = useForm<ProfileSchemaType>({
     resolver: zodResolver(ProfileSchema),
     defaultValues: {
       full_name: profile?.full_name ?? '',
       phone: profile?.phone ?? '',
-      country: profile?.country ?? '',
-      target_band: profile?.target_band ?? '',
+      country: profile?.country ?? 'Uzbekistan',
+      target_band: profile?.target_band ?? 0,
     },
   });
 
@@ -108,7 +116,7 @@ function ProfileForm({ profile }: ProfileFormProps) {
   const { mutate, isPending } = useMutation({
     mutationFn: (data: ProfileSchemaType) =>
       axiosInstance.patch(endpoints.profile.me, {
-        ...data,
+        full_name: data.full_name || null,
         phone: data.phone || null,
         country: data.country || null,
         target_band: data.target_band === '' ? null : data.target_band ?? null,
@@ -123,90 +131,118 @@ function ProfileForm({ profile }: ProfileFormProps) {
   return (
     <Form methods={methods} onSubmit={onSubmit}>
       <Grid container spacing={3}>
-        {/* Avatar card */}
+        {/* Left card — Avatar & info */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <Card
-            sx={{
-              pt: 10,
-              pb: 5,
-              px: 3,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
-          >
-            <Avatar sx={{ width: 100, height: 100, fontSize: 40, mb: 3 }}>
-              {avatarLetter}
-            </Avatar>
+          <Card sx={{ pt: 10, pb: 5, px: 3, position: 'relative' }}>
+            <Label
+              color={profile?.is_admin ? 'primary' : 'warning'}
+              sx={{ position: 'absolute', top: 24, right: 24 }}
+            >
+              {profile?.is_admin ? 'Admin' : 'User'}
+            </Label>
 
-            <Typography variant="subtitle1" sx={{ mb: 0.5 }}>
-              {profile?.full_name || '—'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              {profile?.email}
-            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 5 }}>
+              <Box
+                sx={{
+                  p: '8px',
+                  mb: 2,
+                  borderRadius: '50%',
+                  border: (theme) => `dashed 1px ${theme.vars.palette.divider}`,
+                }}
+              >
+                <Avatar
+                  src={DEFAULT_AVATAR}
+                  alt={displayName}
+                  sx={{ width: 120, height: 120 }}
+                >
+                  {avatarLetter}
+                </Avatar>
+              </Box>
 
-            <Divider sx={{ width: 1, mb: 3 }} />
+              <Typography variant="subtitle1" noWrap sx={{ mt: 1 }}>
+                {profile?.full_name || '—'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" noWrap>
+                {profile?.email}
+              </Typography>
+            </Box>
 
-            <Stack spacing={1} sx={{ width: 1, typography: 'body2' }}>
+            <Stack spacing={1.5} sx={{ typography: 'body2' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Box component="span" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
+                  Email
+                </Typography>
+                <Typography variant="body2">{profile?.email}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="body2" color="text.secondary">
                   Provider
-                </Box>
-                <Box component="span">{profile?.auth_provider}</Box>
+                </Typography>
+                <Typography variant="body2">{profile?.auth_provider}</Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Box component="span" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                   Tokens
-                </Box>
-                <Box component="span">{profile?.token_balance ?? 0}</Box>
+                </Typography>
+                <Typography variant="body2">{profile?.token_balance ?? 0}</Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Box component="span" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                   Role
-                </Box>
-                <Box component="span">{profile?.is_admin ? 'Admin' : 'User'}</Box>
+                </Typography>
+                <Typography variant="body2">{profile?.is_admin ? 'Admin' : 'User'}</Typography>
               </Box>
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Box component="span" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                   Joined
-                </Box>
-                <Box component="span">
+                </Typography>
+                <Typography variant="body2">
                   {profile?.created_at
                     ? new Date(profile.created_at).toLocaleDateString()
                     : '—'}
-                </Box>
+                </Typography>
               </Box>
             </Stack>
+
+            <Button
+              variant="soft"
+              color="error"
+              sx={{ mt: 3, width: 1 }}
+            >
+              Delete account
+            </Button>
           </Card>
         </Grid>
 
-        {/* Form card */}
+        {/* Right card — Form fields */}
         <Grid size={{ xs: 12, md: 8 }}>
           <Card sx={{ p: 3 }}>
-            <Grid container spacing={2.5}>
-              <Grid size={{ xs: 12 }}>
-                <RHFTextField name="full_name" label="Full name" />
-              </Grid>
+            <Box
+              sx={{
+                rowGap: 3,
+                columnGap: 2,
+                display: 'grid',
+                gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+              }}
+            >
+              <Field.Text name="full_name" label="Full name" />
+              <Field.Phone name="phone" label="Phone number" defaultCountry="UZ" />
 
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <RHFTextField name="phone" label="Phone" />
-              </Grid>
+              <Field.CountrySelect
+                fullWidth
+                name="country"
+                label="Country"
+                placeholder="Choose a country"
+              />
 
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <RHFTextField name="country" label="Country" />
-              </Grid>
-
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <RHFSelect name="target_band" label="Target band">
-                  {BAND_SCORES.map((score) => (
-                    <MenuItem key={score} value={score}>
-                      {score.toFixed(1)}
-                    </MenuItem>
-                  ))}
-                </RHFSelect>
-              </Grid>
-            </Grid>
+              <Field.Select name="target_band" label="Target band">
+                {BAND_SCORES.map((score) => (
+                  <MenuItem key={score} value={score}>
+                    {score.toFixed(1)}
+                  </MenuItem>
+                ))}
+              </Field.Select>
+            </Box>
 
             <Stack direction="row" justifyContent="flex-end" sx={{ mt: 3 }}>
               <LoadingButton

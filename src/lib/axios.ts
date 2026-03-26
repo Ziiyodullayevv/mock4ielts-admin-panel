@@ -65,7 +65,7 @@ axiosInstance.interceptors.response.use(
       }
 
       try {
-        const res = await axios.post(`${CONFIG.serverUrl}/admin/auth/refresh`, {
+        const res = await axios.post(`${CONFIG.serverUrl}/auth/refresh`, {
           refresh_token: refreshToken,
         });
 
@@ -80,19 +80,46 @@ axiosInstance.interceptors.response.use(
         processQueue(null, accessToken);
         originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return axiosInstance(originalRequest);
-      } catch (refreshError) {
+      } catch (refreshError: any) {
         processQueue(refreshError, null);
-        sessionStorage.removeItem(JWT_STORAGE_KEY);
-        sessionStorage.removeItem(JWT_REFRESH_KEY);
-        delete axiosInstance.defaults.headers.common.Authorization;
-        window.location.href = '/auth/jwt/sign-in';
+
+        // Only redirect to login if refresh failed due to auth (401/403), not network issues
+        const refreshStatus = refreshError?.response?.status;
+        if (refreshStatus === 401 || refreshStatus === 403 || refreshStatus === 400) {
+          sessionStorage.removeItem(JWT_STORAGE_KEY);
+          sessionStorage.removeItem(JWT_REFRESH_KEY);
+          delete axiosInstance.defaults.headers.common.Authorization;
+          window.location.href = '/auth/jwt/sign-in';
+        }
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }
     }
 
-    const message = error?.response?.data?.message || error?.message || 'Something went wrong!';
+    let message = 'Something went wrong!';
+
+    if (error?.response) {
+      // Server responded with an error status
+      const status = error.response.status;
+      message =
+        error.response.data?.message ||
+        error.response.data?.error ||
+        `Server error (${status})`;
+    } else if (error?.request) {
+      // Request was made but no response received (CORS, network down, timeout)
+      if (error.code === 'ECONNABORTED') {
+        message = 'Request timed out. Please try again.';
+      } else if (error.message?.includes('Network Error')) {
+        message = 'Network error — check your connection or the server may be unavailable.';
+      } else {
+        message = 'No response from server. Please try again.';
+      }
+    } else {
+      message = error?.message || 'Something went wrong!';
+    }
+
     return Promise.reject(new Error(message));
   }
 );
@@ -121,15 +148,41 @@ export const fetcher = async <T = unknown>(
 export const endpoints = {
   auth: {
     signIn: '/admin/auth/login',
-    refresh: '/admin/auth/refresh',
+    refresh: '/auth/refresh',
+    logout: '/auth/logout',
   },
   users: {
     list: '/admin/users',
     details: (id: string) => `/admin/users/${id}`,
   },
-  questions: {
-    list: '/admin/questions',
-    details: (id: string) => `/admin/questions/${id}`,
+  sections: {
+    list: '/admin/sections',
+    details: (id: string) => `/admin/sections/${id}`,
+    publish: (id: string) => `/admin/sections/${id}/publish`,
+    duplicate: (id: string) => `/admin/sections/${id}/duplicate`,
+    addPart: (sectionId: string) => `/admin/sections/${sectionId}/parts`,
+    updatePart: (sectionId: string, partId: string) => `/admin/sections/${sectionId}/parts/${partId}`,
+    deletePart: (sectionId: string, partId: string) => `/admin/sections/${sectionId}/parts/${partId}`,
+    addQuestion: (partId: string) => `/admin/parts/${partId}/questions`,
+    addQuestionsBulk: (partId: string) => `/admin/parts/${partId}/questions/bulk`,
+    updateQuestion: (partId: string, questionId: string) => `/admin/parts/${partId}/questions/${questionId}`,
+    deleteQuestion: (partId: string, questionId: string) => `/admin/parts/${partId}/questions/${questionId}`,
+    reorderQuestions: (partId: string) => `/admin/parts/${partId}/questions/reorder`,
+  },
+  mockExams: {
+    list: '/admin/mock-exams',
+    details: (id: string) => `/admin/mock-exams/${id}`,
+    publish: (id: string) => `/admin/mock-exams/${id}/publish`,
+    duplicate: (id: string) => `/admin/mock-exams/${id}/duplicate`,
+  },
+  contests: {
+    list: '/admin/contests',
+    details: (id: string) => `/admin/contests/${id}`,
+    publish: (id: string) => `/admin/contests/${id}/publish`,
+    start: (id: string) => `/admin/contests/${id}/start`,
+    end: (id: string) => `/admin/contests/${id}/end`,
+    leaderboard: (id: string) => `/admin/contests/${id}/leaderboard`,
+    stats: (id: string) => `/admin/contests/${id}/stats`,
   },
   profile: {
     me: '/users/me',

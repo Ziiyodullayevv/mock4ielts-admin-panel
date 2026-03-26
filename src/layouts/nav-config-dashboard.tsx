@@ -40,8 +40,18 @@ export const navData: NavSectionProps['data'] = [
         icon: ICONS.user,
       },
       {
-        title: 'Questions',
-        path: paths.dashboard.questions.root,
+        title: 'Sections',
+        path: paths.dashboard.sections.root,
+        icon: ICONS.order,
+      },
+      {
+        title: 'Mock Exams',
+        path: paths.dashboard.mockExams.root,
+        icon: ICONS.order,
+      },
+      {
+        title: 'Contests',
+        path: paths.dashboard.contests.root,
         icon: ICONS.order,
       },
     ],

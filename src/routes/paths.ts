@@ -49,11 +49,23 @@ export const paths = {
       details: (id: string) => `${ROOTS.DASHBOARD}/users/${id}`,
       edit: (id: string) => `${ROOTS.DASHBOARD}/users/${id}/edit`,
     },
-    questions: {
-      root: `${ROOTS.DASHBOARD}/questions`,
-      new: `${ROOTS.DASHBOARD}/questions/new`,
-      details: (id: string) => `${ROOTS.DASHBOARD}/questions/${id}`,
-      edit: (id: string) => `${ROOTS.DASHBOARD}/questions/${id}/edit`,
+    sections: {
+      root: `${ROOTS.DASHBOARD}/sections`,
+      new: `${ROOTS.DASHBOARD}/sections/new`,
+      details: (id: string) => `${ROOTS.DASHBOARD}/sections/${id}`,
+      edit: (id: string) => `${ROOTS.DASHBOARD}/sections/${id}/edit`,
+    },
+    mockExams: {
+      root: `${ROOTS.DASHBOARD}/mock-exams`,
+      new: `${ROOTS.DASHBOARD}/mock-exams/new`,
+      details: (id: string) => `${ROOTS.DASHBOARD}/mock-exams/${id}`,
+      edit: (id: string) => `${ROOTS.DASHBOARD}/mock-exams/${id}/edit`,
+    },
+    contests: {
+      root: `${ROOTS.DASHBOARD}/contests`,
+      new: `${ROOTS.DASHBOARD}/contests/new`,
+      details: (id: string) => `${ROOTS.DASHBOARD}/contests/${id}`,
+      edit: (id: string) => `${ROOTS.DASHBOARD}/contests/${id}/edit`,
     },
   },
 };
